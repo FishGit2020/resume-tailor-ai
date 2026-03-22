@@ -33,7 +33,9 @@ export default function JDInput({ factBank, onGenerated }: Props) {
       const data = await res.json()
       if (data.error) {
         setError(data.error)
-        if (!data.isLinkedIn) setMode('text')
+        if (!data.isLinkedIn) {
+          setMode('text')
+        }
         return
       }
       setScrapedText(data.jdText)
@@ -134,14 +136,14 @@ export default function JDInput({ factBank, onGenerated }: Props) {
             </button>
           </div>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', fontFamily: 'Instrument Sans' }}>
-            Works with: Greenhouse, Lever, company career pages · LinkedIn requires manual paste
+            Works with: Greenhouse, Lever, company career pages · LinkedIn requires manual paste · Always verify fetched JD looks correct — if not, paste text directly
           </p>
           {scrapedText && (
             <div className="rounded-lg p-3" style={{ background: 'var(--green-dim)', border: '1px solid var(--green-border)' }}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--green)' }} />
-                  <span className="text-xs" style={{ color: 'var(--green)', fontFamily: 'Instrument Sans' }}>JD fetched successfully · click to edit</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--green)', fontFamily: 'Instrument Sans' }}>JD fetched — please verify content carefully</span>
                 </div>
               </div>
               <textarea

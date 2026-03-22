@@ -195,7 +195,7 @@ export function ResumePDFDocument({ resume }: { resume: GeneratedResume }) {
                   </Text>
                   <Text style={styles.dates}>{edu.startDate}{edu.endDate ? ` – ${edu.endDate}` : ''}</Text>
                 </View>
-                {edu.notes.map((note, i) => (
+                {edu.notes.filter(n => n.trim()).map((note, i) => (
                   <View key={i} style={styles.bullet}>
                     <Text style={styles.bulletDot}>•</Text>
                     <Text style={styles.bulletText}>{note}</Text>
@@ -239,7 +239,7 @@ export function ResumePDFDocument({ resume }: { resume: GeneratedResume }) {
                   <Text style={styles.title}>{exp.title}</Text>
                   <Text style={styles.dates}>{exp.startDate}{exp.endDate ? ` – ${exp.endDate}` : ''}</Text>
                 </View>
-                {exp.bullets.map((bullet, j) => (
+                {exp.bullets.filter(b => b.trim()).map((bullet, j) => (
                   <View key={j} style={styles.bullet}>
                     <Text style={styles.bulletDot}>•</Text>
                     <Text style={styles.bulletText}>{bullet}</Text>

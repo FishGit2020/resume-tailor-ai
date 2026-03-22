@@ -18,6 +18,7 @@ export default function Home() {
   const [jdText, setJdText] = useState('')
   const [applications, setApplications] = useState<Application[]>([])
   const [saved, setSaved] = useState(false)
+  const [resumeKey, setResumeKey] = useState(0)
 
   useEffect(() => {
     setFactBank(loadFactBank())
@@ -33,6 +34,7 @@ export default function Home() {
     setResume(r)
     setJdText(jd)
     setSaved(false)
+    setResumeKey(k => k + 1)
     setTab('generate')
   }
 
@@ -192,7 +194,7 @@ export default function Home() {
               </div>
               {resume && (
                 <div className="animate-fade-up overflow-hidden">
-                  <ResumePreview resume={resume} onChange={setResume} onDownloaded={handleDownloaded} />
+                  <ResumePreview key={resumeKey} resume={resume} onChange={setResume} onDownloaded={handleDownloaded} />
                 </div>
               )}
             </div>

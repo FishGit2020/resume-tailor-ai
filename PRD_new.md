@@ -587,6 +587,7 @@ JD text truncated to 1500 chars.
 - If no category fits, add a new line
 - Keep EVERY existing skill
 - Keep to 2–4 total skill lines
+- **If a keyword is a business concept, outcome, or process (not a tool, technology, or methodology), do NOT add it to skills — skip it entirely**
 
 **Output JSON**: `{ "skills": ["Category: skills..."] }`
 
@@ -607,6 +608,7 @@ resume: GeneratedResume | null
 jdText: string                 // the JD text used for current resume
 applications: Application[]
 saved: boolean                 // whether current resume is saved to applications
+resumeKey: number              // incremented on each new generation; passed as key prop to ResumePreview to force remount and reset boosted state
 ```
 
 ### Initialization
@@ -616,7 +618,7 @@ Render null (spinner) while `factBank === null`.
 
 ### Key handlers
 - `handleFactBankChange(fb)`: update state + save to localStorage
-- `handleGenerated(r, jd)`: set resume, set jdText, reset `saved=false`, switch to 'generate' tab
+- `handleGenerated(r, jd)`: set resume, set jdText, reset `saved=false`, increment `resumeKey`, switch to 'generate' tab
 - `handleDownloaded()`: if `!resume || saved` return early; call `saveApplication(...)` with `resume.jdReport.company`, `resume.jdReport.role`, `resume`, `jdText`; reload applications from localStorage; set `saved=true`
 
 ### Header
@@ -665,7 +667,7 @@ stepTimers: useRef<ReturnType<typeof setTimeout>[]>([])
 
 ### URL mode behavior
 - Input + "Fetch JD" button
-- On success: shows editable `<textarea>` (6 rows, transparent bg, no border, DM Mono 11px) inside green-dim box with "JD fetched successfully · click to edit" label
+- On success: shows editable `<textarea>` (6 rows, transparent bg, no border, DM Mono 11px) inside green-dim box with **"JD fetched — please verify content carefully"** label (font-bold, green) — user should confirm content is a real JD before generating
 - User can directly edit the scraped text before generating
 - On error: show error message; if not LinkedIn, auto-switch to text mode
 

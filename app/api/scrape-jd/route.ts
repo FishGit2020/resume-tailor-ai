@@ -6,12 +6,36 @@ export async function POST(req: NextRequest) {
     const { url } = await req.json()
     if (!url) return NextResponse.json({ error: 'No URL provided' }, { status: 400 })
 
-    // Check for LinkedIn
-    if (url.includes('linkedin.com')) {
+    // Sites that require JS rendering or login — cannot be scraped
+    const jsRenderedSites = ['linkedin.com', 'jobs.netflix.com', 'explore.jobs.netflix.com']
+    if (jsRenderedSites.some(site => url.includes(site))) {
       return NextResponse.json({
-        error: 'LinkedIn job pages require login and cannot be scraped automatically. Please copy and paste the job description text instead.',
-        isLinkedIn: true,
+        error: 'This job page cannot be fetched automatically. Please copy and paste the job description text instead.',
+        isLinkedIn: url.includes('linkedin.com'),
       }, { status: 422 })
+    }
+
+    // Ashby HQ — use their public posting API
+    if (url.includes('ashbyhq.com')) {
+      const match = url.match(/ashbyhq\.com\/[^/]+\/([a-f0-9-]{36})/)
+      if (!match) {
+        return NextResponse.json({ error: 'Could not parse Ashby job ID from URL. Please paste the text instead.' }, { status: 422 })
+      }
+      const jobId = match[1]
+      const apiRes = await fetch(`https://api.ashbyhq.com/posting-api/job-posting/${jobId}`, {
+        headers: { 'Accept': 'application/json' },
+      })
+      if (!apiRes.ok) {
+        return NextResponse.json({ error: 'Failed to fetch from Ashby API. Please paste the text instead.' }, { status: 422 })
+      }
+      const data = await apiRes.json()
+      const descriptionHtml: string = data?.job?.descriptionHtml ?? data?.descriptionHtml ?? ''
+      if (!descriptionHtml) {
+        return NextResponse.json({ error: 'Could not extract job description from Ashby. Please paste the text instead.' }, { status: 422 })
+      }
+      const $ = cheerio.load(descriptionHtml)
+      const text = $.text().replace(/\s+/g, ' ').trim()
+      return NextResponse.json({ jdText: text.slice(0, 8000) })
     }
 
     const controller = new AbortController()
@@ -67,6 +91,24 @@ export async function POST(req: NextRequest) {
 
     if (!text || text.length < 100) {
       return NextResponse.json({ error: 'Could not extract job description from this page. Please paste the text instead.' }, { status: 422 })
+    }
+
+    // Reject if extracted content looks like JS/JSON rather than a job description
+    const trimmed = text.trimStart()
+    const looksLikeCode = trimmed.startsWith('{') || trimmed.startsWith('[') ||
+      /document\.|\.then\(|console\.log|createElement|innerHTML/.test(trimmed.slice(0, 300))
+    if (looksLikeCode) {
+      return NextResponse.json({ error: 'This page couldn\'t be scraped automatically. Please paste the job description text below.', needsPaste: true }, { status: 422 })
+    }
+
+    // Sanity check: real JDs contain at least some job-related vocabulary
+    const jdKeywords = ['responsibilities', 'requirements', 'qualifications', 'experience', 'skills',
+      'role', 'position', 'team', 'candidate', 'apply', 'salary', 'benefits', 'location',
+      'remote', 'hybrid', 'full-time', 'part-time', 'job', 'hiring', 'opportunity', 'work']
+    const lower = text.toLowerCase()
+    const matchCount = jdKeywords.filter(k => lower.includes(k)).length
+    if (matchCount < 2) {
+      return NextResponse.json({ error: 'This page couldn\'t be scraped automatically. Please paste the job description text below.', needsPaste: true }, { status: 422 })
     }
 
     return NextResponse.json({ jdText: text.slice(0, 8000) })

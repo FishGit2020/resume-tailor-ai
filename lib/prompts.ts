@@ -228,6 +228,7 @@ RULES:
 - Keep EVERY existing skill — do not remove or modify existing content
 - Format: "CategoryName: skill1, skill2, skill3"
 - Keep to 2-4 total skill lines
+- If a keyword is a business concept, outcome, or process (not a tool, technology, or methodology), do NOT add it to skills — skip it entirely
 
 Return JSON (no markdown):
 {

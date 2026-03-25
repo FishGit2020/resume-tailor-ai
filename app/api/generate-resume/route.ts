@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { buildLLMClient, LLM_MODEL } from '@/lib/llm'
 import { renderToBuffer } from '@react-pdf/renderer'
 import pdfParse from 'pdf-parse'
 import { FactBank, GeneratedResume, GeneratedExperience, JDReport } from '@/lib/types'
@@ -12,7 +12,7 @@ import {
 import React from 'react'
 import { ResumePDFDocument } from '@/components/ResumePDF'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = buildLLMClient()
 
 async function countPDFPages(resume: GeneratedResume): Promise<number> {
   try {
@@ -57,13 +57,13 @@ export async function POST(req: NextRequest) {
     // Step A + B in parallel: Frame selection & JD Report
     const [frameSelectionCompletion, jdReportCompletion] = await Promise.all([
       openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODEL,
         messages: [{ role: 'user', content: buildVersionSelectionPrompt(jdText, factBank.experiences) }],
         response_format: { type: 'json_object' },
         temperature: 0.1,
       }),
       openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODEL,
         messages: [{ role: 'user', content: buildJDReportPrompt(jdText) }],
         response_format: { type: 'json_object' },
         temperature: 0.1,
@@ -134,13 +134,13 @@ export async function POST(req: NextRequest) {
     // Step C + D in parallel: Bullet rewrite & Skills
     const [bulletRewriteCompletion, skillsCompletion] = await Promise.all([
       openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODEL,
         messages: [{ role: 'user', content: buildBulletRewritePrompt(top10, variantKeywords, missingKeywords, experiencesWithNumberedBullets) }],
         response_format: { type: 'json_object' },
         temperature: 0.2,
       }),
       openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODEL,
         messages: [{ role: 'user', content: buildSkillsPrompt(jdText, factBank.skills) }],
         response_format: { type: 'json_object' },
         temperature: 0.2,

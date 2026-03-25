@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { buildLLMClient, LLM_MODEL } from '@/lib/llm'
 import { extractText } from 'unpdf'
 import mammoth from 'mammoth'
 import { buildParsePrompt } from '@/lib/prompts'
 import { Experience, Education, Project, FactBank } from '@/lib/types'
 import { randomUUID } from 'crypto'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = buildLLMClient()
 
 async function detectAndExtractText(buffer: Buffer, filename: string): Promise<string> {
   const isPDF = buffer[0] === 0x25 && buffer[1] === 0x50 && buffer[2] === 0x44 && buffer[3] === 0x46
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         const text = await detectAndExtractText(buffer, file.name)
 
         const completion = await openai.chat.completions.create({
-          model: 'gpt-4o',
+          model: LLM_MODEL,
           messages: [{ role: 'user', content: buildParsePrompt(text, file.name) }],
           response_format: { type: 'json_object' },
           temperature: 0.1,

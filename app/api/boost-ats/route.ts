@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import OpenAI from 'openai'
+import { buildLLMClient, LLM_MODEL } from '@/lib/llm'
 import { GeneratedResume, JDReport } from '@/lib/types'
 import {
   buildAggressiveBulletRewritePrompt,
   buildSkillsBoostPrompt,
 } from '@/lib/prompts'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+const openai = buildLLMClient()
 
 function stem(word: string): string {
   return word
@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
     }))
 
     const bulletCompletion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: LLM_MODEL,
       messages: [{ role: 'user', content: buildAggressiveBulletRewritePrompt(jdReport.top10 || [], missingBusinessContext, missingHardSkills, experiencesWithNumberedBullets) }],
       response_format: { type: 'json_object' },
       temperature: 0.3,
@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     let boostedSkills = resume.skills
     if (hardSkillsStillMissing.length > 0) {
       const skillsCompletion = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: LLM_MODEL,
         messages: [{ role: 'user', content: buildSkillsBoostPrompt(resume.skills, hardSkillsStillMissing) }],
         response_format: { type: 'json_object' },
         temperature: 0.1,
